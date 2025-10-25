@@ -17,23 +17,17 @@ resource "alicloud_cen_transit_router_cidr" "tr_cidr" {
   publish_cidr_route       = true
 }
 
-
 # Attach VPCs to Transit Router
-resource "alicloud_cen_transit_router_vpc_attachment" "vpc_attachments" {
-    for_each = { for idx, vpc in var.vpc_attachments : vpc.name => vpc }
-    
-    transit_router_vpc_attachment_name = each.value.name
+resource "alicloud_cen_transit_router_vpc_attachment" "this" {    
+    transit_router_vpc_attachment_name = var.tr_vpc_attachment.transit_router_attachment_name
     cen_id                             = alicloud_cen_instance.cen.id
-    vpc_id                             = each.value.vpc_id
+    vpc_id                             = var.vpc_id
     transit_router_id                  = alicloud_cen_transit_router.tr.transit_router_id
-    auto_publish_route_enabled         = true
-    vpc_owner_id                       = each.value.vpc_owner_id
+    auto_publish_route_enabled         = var.tr_vpc_attachment.auto_publish_route_enabled
+    vpc_owner_id                       = var.vpc_owner_id
     
     dynamic "zone_mappings" {
-      for_each = {
-        for k, v in each.value.zone_vswitch_mappings : k => v 
-        if v.vswitch_id != null && v.vswitch_id != ""
-      }
+      for_each = var.vswitch_zone_mappings
       content {
         zone_id    = zone_mappings.value.zone_id
         vswitch_id = zone_mappings.value.vswitch_id
@@ -52,16 +46,12 @@ resource "alicloud_cen_transit_router_route_table" "tr_rt" {
 }
 
 # Associate and propagate route tables for each VPC
-resource "alicloud_cen_transit_router_route_table_association" "rt_associations" {  
-    for_each = alicloud_cen_transit_router_vpc_attachment.vpc_attachments
-    
+resource "alicloud_cen_transit_router_route_table_association" "rt_associations" {     
     transit_router_route_table_id = alicloud_cen_transit_router_route_table.tr_rt.transit_router_route_table_id
     transit_router_attachment_id  = each.value.transit_router_attachment_id
 }
 
 resource "alicloud_cen_transit_router_route_table_propagation" "rt_propagations" {  
-  for_each = alicloud_cen_transit_router_vpc_attachment.vpc_attachments
-  
   transit_router_route_table_id = alicloud_cen_transit_router_route_table.tr_rt.transit_router_route_table_id
   transit_router_attachment_id  = each.value.transit_router_attachment_id
 }
