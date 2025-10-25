@@ -48,10 +48,10 @@ resource "alicloud_cen_transit_router_route_table" "tr_rt" {
 # Associate and propagate route tables for each VPC
 resource "alicloud_cen_transit_router_route_table_association" "rt_associations" {     
     transit_router_route_table_id = alicloud_cen_transit_router_route_table.tr_rt.transit_router_route_table_id
-    transit_router_attachment_id  = each.value.transit_router_attachment_id
+    transit_router_attachment_id  =  alicloud_cen_transit_router_vpc_attachment.this.transit_router_attachment_id
 }
 
 resource "alicloud_cen_transit_router_route_table_propagation" "rt_propagations" {  
   transit_router_route_table_id = alicloud_cen_transit_router_route_table.tr_rt.transit_router_route_table_id
-  transit_router_attachment_id  = each.value.transit_router_attachment_id
+  transit_router_attachment_id  =  alicloud_cen_transit_router_vpc_attachment.this.transit_router_attachment_id
 }
